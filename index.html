@@ -29,8 +29,9 @@
       flex-direction: column;
       align-items: center;
       padding: 20px;
+      transition: background 0.5s;
     }
-    /* Main container to constrain width and center content */
+    /* Main container */
     .container {
       width: 100%;
       max-width: 900px;
@@ -109,17 +110,18 @@
       margin: 20px auto;
       border: 3px solid #ffd700;
       border-radius: 15px;
-      overflow: hidden;
+      overflow: auto;
       box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
     table {
       width: 100%;
       border-collapse: collapse;
+      margin: 0 auto;
     }
     td {
       border: 2px solid #ffd700;
       padding: 20px;
-      width: 20%;  /* 5 columns */
+      width: 20%; /* 5 columns */
       height: 80px;
       cursor: pointer;
       background-color: rgba(0,0,0,0.5);
@@ -194,30 +196,33 @@
     #surprise-overlay button:hover {
       transform: scale(1.05);
     }
-    /* Responsive Adjustments */
+    /* Responsive Styles */
     @media (max-width: 600px) {
       body {
         padding: 10px;
         background-attachment: scroll;
       }
+      .container {
+        padding: 10px;
+      }
       h1 {
         font-size: 2.5em;
       }
       #instruction {
-        font-size: 1em;
-        padding: 15px;
+        font-size: 0.9em;
+        padding: 10px;
       }
       #timer {
-        font-size: 1.2em;
+        font-size: 1em;
       }
       button {
-        padding: 8px 16px;
-        font-size: 0.9em;
+        padding: 6px 12px;
+        font-size: 0.8em;
       }
       td {
-        padding: 10px;
-        font-size: 0.9em;
-        height: 60px;
+        padding: 8px;
+        font-size: 0.8em;
+        height: 50px;
       }
     }
   </style>
@@ -299,7 +304,6 @@
           cell.classList.remove('selected', 'locked');
           cell.addEventListener('click', () => {
             if (gameStarted && !selectionLocked && !cell.classList.contains('locked')) {
-              // Deselect any previously selected cell.
               document.querySelectorAll('#bingo-table td').forEach(c => c.classList.remove('selected'));
               cell.classList.add('selected');
               selectedWord = cell.innerText;
@@ -327,7 +331,7 @@
           selectionLocked = true;
           confirmBtn.disabled = true;
           alert("Time's up! The fates have spoken. Starting a new turn.");
-          startTurn(); // Automatically start a new turn.
+          startTurn();
         }
       }, 1000);
     }
