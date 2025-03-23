@@ -7,17 +7,20 @@
   <!-- Google Font with a Chinese-inspired style -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* Global Styles with Chinese Theme */
+    /* Global Styles */
     body {
       font-family: 'Noto Serif SC', serif;
-      background: url('background.jpg') no-repeat center center fixed;
-      background-size: cover;
       margin: 0;
       padding: 20px;
       color: #fff;
       text-align: center;
       overflow-x: hidden;
+      /* Use fixed background for desktops */
+      background: url('background.jpg') no-repeat center center;
+      background-size: cover;
+      background-attachment: fixed;
       background-color: #000;
+      transition: background 0.5s;
     }
     h1 {
       font-size: 3.5em;
@@ -174,11 +177,12 @@
     #surprise-overlay button:hover {
       transform: scale(1.05);
     }
-    
-    /* Responsive Styles for Mobile */
+    /* Mobile & Responsive Styles */
     @media (max-width: 600px) {
       body {
         padding: 10px;
+        /* Change background attachment for mobile for better performance */
+        background-attachment: scroll;
       }
       h1 {
         font-size: 2.5em;
