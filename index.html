@@ -2,43 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SEPM Risk Management Bingo</title>
   <!-- Google Font with a Chinese-inspired style -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* Global Styles */
+    /* Reset and Global Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      height: 100%;
+    }
     body {
       font-family: 'Noto Serif SC', serif;
-      margin: 0;
-      padding: 20px;
       color: #fff;
       text-align: center;
-      overflow-x: hidden;
-      /* Use fixed background for desktops */
       background: url('background.jpg') no-repeat center center;
       background-size: cover;
       background-attachment: fixed;
+      background-position: center;
       background-color: #000;
-      transition: background 0.5s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    /* Main container to constrain width and center content */
+    .container {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(0,0,0,0.5);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
     h1 {
       font-size: 3.5em;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
       text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
       color: #ffd700;
     }
     /* Instruction Box */
     #instruction {
-      background-color: rgba(220, 20, 60, 0.8);
+      background-color: rgba(220,20,60,0.8);
       border: 3px solid #ffd700;
       border-radius: 15px;
       padding: 20px;
-      margin: 0 auto 20px;
-      max-width: 800px;
+      margin-bottom: 20px;
       font-size: 1.2em;
-      box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
       backdrop-filter: blur(4px);
+      text-align: left;
     }
     /* Timer */
     #timer {
@@ -53,35 +71,67 @@
       50% { transform: scale(1.05); }
       100% { transform: scale(1); }
     }
-    /* Bingo Container */
+    /* Controls */
+    #controls {
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    #start-btn {
+      background-color: #dc143c;
+      color: #ffd700;
+    }
+    #shuffle-btn {
+      background-color: #8b0000;
+      color: #ffd700;
+    }
+    #confirm-btn {
+      background-color: #4caf50;
+      color: #fff;
+    }
+    #confirm-btn:disabled {
+      background-color: #9e9e9e;
+      cursor: not-allowed;
+    }
+    /* Bingo Container and Table */
     #bingo-container {
-      display: inline-block;
       margin: 20px auto;
       border: 3px solid #ffd700;
       border-radius: 15px;
       overflow: hidden;
-      box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
     table {
+      width: 100%;
       border-collapse: collapse;
-      margin: 0 auto;
     }
     td {
       border: 2px solid #ffd700;
       padding: 20px;
-      width: 120px;
+      width: 20%;  /* 5 columns */
       height: 80px;
       cursor: pointer;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0,0,0,0.5);
       transition: background-color 0.3s, transform 0.3s;
       font-weight: bold;
       font-size: 1.1em;
       border-radius: 8px;
-      position: relative;
-      overflow: hidden;
+      text-align: center;
+      vertical-align: middle;
     }
     td:hover:not(.locked) {
-      background-color: rgba(255, 215, 0, 0.3);
+      background-color: rgba(255,215,0,0.3);
       transform: scale(1.05);
     }
     td.selected {
@@ -105,40 +155,7 @@
       0% { transform: scale(0.8); opacity: 0.5; }
       100% { transform: scale(1); opacity: 1; }
     }
-    /* Controls */
-    #controls {
-      margin: 20px;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 1em;
-      margin: 5px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s, transform 0.3s;
-      box-shadow: 0px 3px 6px rgba(0,0,0,0.3);
-    }
-    button:hover {
-      transform: scale(1.05);
-    }
-    #start-btn {
-      background-color: #dc143c;
-      color: #ffd700;
-    }
-    #shuffle-btn {
-      background-color: #8b0000;
-      color: #ffd700;
-    }
-    #confirm-btn {
-      background-color: #4caf50;
-      color: #fff;
-    }
-    #confirm-btn:disabled {
-      background-color: #9e9e9e;
-      cursor: not-allowed;
-    }
-    /* Surprise overlay style */
+    /* Surprise Overlay */
     #surprise-overlay {
       position: fixed;
       top: 0;
@@ -171,17 +188,16 @@
       border-radius: 5px;
       cursor: pointer;
       color: #fff;
-      box-shadow: 0px 3px 6px rgba(0,0,0,0.3);
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
       transition: background-color 0.3s, transform 0.3s;
     }
     #surprise-overlay button:hover {
       transform: scale(1.05);
     }
-    /* Mobile & Responsive Styles */
+    /* Responsive Adjustments */
     @media (max-width: 600px) {
       body {
         padding: 10px;
-        /* Change background attachment for mobile for better performance */
         background-attachment: scroll;
       }
       h1 {
@@ -199,30 +215,31 @@
         font-size: 0.9em;
       }
       td {
-        width: 80px;
-        height: 60px;
         padding: 10px;
         font-size: 0.9em;
+        height: 60px;
       }
     }
   </style>
 </head>
 <body>
-  <h1>SEPM Risk Management Bingo</h1>
-  <div id="instruction">
-    <p>Before you begin, use the "Shuffle Board" button to rearrange the symbols of destiny.<br>
-    When ready, click "Start Game" to begin your 30-second turns. In each turn, select one sacred cell and click "Confirm Answer" to seal its fate.</p>
-  </div>
-  <div id="timer">
-    Time remaining: <span id="time-remaining">30</span> seconds
-  </div>
-  <div id="controls">
-    <button id="start-btn">Start Game</button>
-    <button id="shuffle-btn">Shuffle Board</button>
-    <button id="confirm-btn" disabled>Confirm Answer</button>
-  </div>
-  <div id="bingo-container">
-    <table id="bingo-table"></table>
+  <div class="container">
+    <h1>SEPM Risk Management Bingo</h1>
+    <div id="instruction">
+      <p>Before you begin, use the "Shuffle Board" button to rearrange the symbols of destiny.<br>
+      When ready, click "Start Game" to begin your 30-second turns. In each turn, select one sacred cell and click "Confirm Answer" to seal its fate.</p>
+    </div>
+    <div id="timer">
+      Time remaining: <span id="time-remaining">30</span> seconds
+    </div>
+    <div id="controls">
+      <button id="start-btn">Start Game</button>
+      <button id="shuffle-btn">Shuffle Board</button>
+      <button id="confirm-btn" disabled>Confirm Answer</button>
+    </div>
+    <div id="bingo-container">
+      <table id="bingo-table"></table>
+    </div>
   </div>
 
   <!-- Surprise Ending Overlay -->
@@ -301,7 +318,6 @@
       selectedWord = null;
       confirmBtn.disabled = true;
       selectionLocked = false;
-      // Remove any selected state.
       document.querySelectorAll('#bingo-table td').forEach(cell => cell.classList.remove('selected'));
       timerInterval = setInterval(() => {
         timeRemaining--;
@@ -321,7 +337,6 @@
       if (selectedWord) {
         selectionLocked = true;
         clearInterval(timerInterval);
-        // Lock the cell that was selected.
         document.querySelectorAll('#bingo-table td').forEach(cell => {
           if (cell.innerText === selectedWord && cell.classList.contains('selected')) {
             cell.classList.add('locked');
@@ -329,11 +344,9 @@
           }
         });
         confirmBtn.disabled = true;
-        // Check for bingo.
         if (checkBingo()) {
           showSurprise();
         } else {
-          // Start next turn after a short delay.
           setTimeout(startTurn, 500);
         }
       }
@@ -352,10 +365,8 @@
       for (let cell of cells) {
         let r = parseInt(cell.dataset.row);
         let c = parseInt(cell.dataset.col);
-        // Only consider locked cells.
         grid[r][c] = cell.classList.contains('locked');
       }
-      // Check rows and columns.
       for (let i = 0; i < 5; i++) {
         if (grid[i].every(val => val)) return true;
         let colComplete = true;
@@ -367,7 +378,6 @@
         }
         if (colComplete) return true;
       }
-      // Check diagonals.
       let diag1 = true, diag2 = true;
       for (let i = 0; i < 5; i++) {
         if (!grid[i][i]) diag1 = false;
@@ -376,36 +386,29 @@
       return diag1 || diag2;
     }
 
-    // Show the surprise ending overlay.
+    // Show the surprise overlay.
     function showSurprise() {
       overlay.style.display = 'flex';
     }
 
-    // Reset game: rebuild the board and restart the turn.
+    // Reset the game.
     function resetGame() {
       overlay.style.display = 'none';
       gameStarted = false;
-      // Enable shuffle and start buttons.
       shuffleBtn.disabled = false;
       startBtn.disabled = false;
       buildBingoBoard();
       timerEl.style.display = "none";
     }
 
-    // Start game button event.
     startBtn.addEventListener('click', function () {
       gameStarted = true;
-      // Once game starts, disable the start and shuffle buttons.
       startBtn.disabled = true;
       shuffleBtn.disabled = true;
       timerEl.style.display = "block";
       startTurn();
     });
-
-    // Shuffle button event (active only before the game starts).
     shuffleBtn.addEventListener('click', buildBingoBoard);
-
-    // Initialize board.
     buildBingoBoard();
   </script>
 </body>
