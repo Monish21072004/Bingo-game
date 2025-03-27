@@ -1,63 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SEPM Risk Management Bingo</title>
   <!-- Google Font with a Chinese-inspired style -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* Reset and Global Styles */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    html, body {
-      height: 100%;
-    }
+    /* Global Styles with Chinese Theme */
     body {
       font-family: 'Noto Serif SC', serif;
+      background: url('background.jpg') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 20px;
       color: #fff;
       text-align: center;
-      background: url('background.jpg') no-repeat center center;
-      background-size: cover;
-      background-attachment: fixed;
-      background-position: center;
+      overflow-x: hidden;
       background-color: #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      transition: background 0.5s;
-    }
-    /* Main container */
-    .container {
-      width: 100%;
-      max-width: 900px;
-      margin: 0 auto;
-      background: rgba(0,0,0,0.5);
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
     h1 {
       font-size: 3.5em;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
       text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
       color: #ffd700;
     }
     /* Instruction Box */
     #instruction {
-      background-color: rgba(220,20,60,0.8);
+      background-color: rgba(220, 20, 60, 0.8);
       border: 3px solid #ffd700;
       border-radius: 15px;
       padding: 20px;
-      margin-bottom: 20px;
+      margin: 0 auto 20px;
+      max-width: 800px;
       font-size: 1.2em;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
       backdrop-filter: blur(4px);
-      text-align: left;
     }
     /* Timer */
     #timer {
@@ -72,9 +50,74 @@
       50% { transform: scale(1.05); }
       100% { transform: scale(1); }
     }
+    /* Bingo Container */
+    #bingo-container {
+      display: inline-block;
+      margin: 20px auto;
+      border: 3px solid #ffd700;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
+    }
+    table {
+      border-collapse: collapse;
+      margin: 0 auto;
+    }
+    td {
+      border: 2px solid #ffd700;
+      padding: 20px;
+      width: 120px;
+      height: 80px;
+      cursor: pointer;
+      background-color: rgba(0, 0, 0, 0.5);
+      transition: background-color 0.3s, transform 0.3s;
+      font-weight: bold;
+      font-size: 1.1em;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    td:hover:not(.locked):not(.correct):not(.wrong) {
+      background-color: rgba(255, 215, 0, 0.3);
+      transform: scale(1.05);
+    }
+    td.selected {
+      background-color: #ffd700;
+      transform: scale(1.1);
+      animation: pulseSelect 0.5s ease-out;
+      color: #000;
+    }
+    @keyframes pulseSelect {
+      0% { transform: scale(1.05); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1.05); }
+    }
+    /* Default locked state (before answer marking) */
+    td.locked {
+      background-color: #444;
+      cursor: default;
+      animation: popLocked 0.6s ease-out;
+      color: #fff;
+    }
+    @keyframes popLocked {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    /* When a cell is marked correct (green) */
+    td.correct {
+      background-color: #32cd32;
+      color: #000;
+      cursor: default;
+    }
+    /* When a cell is marked wrong (red) */
+    td.wrong {
+      background-color: #dc143c;
+      color: #000;
+      cursor: default;
+    }
     /* Controls */
     #controls {
-      margin: 20px 0;
+      margin: 20px;
     }
     button {
       padding: 10px 20px;
@@ -84,7 +127,7 @@
       border-radius: 5px;
       cursor: pointer;
       transition: background-color 0.3s, transform 0.3s;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+      box-shadow: 0px 3px 6px rgba(0,0,0,0.3);
     }
     button:hover {
       transform: scale(1.05);
@@ -105,59 +148,7 @@
       background-color: #9e9e9e;
       cursor: not-allowed;
     }
-    /* Bingo Container and Table */
-    #bingo-container {
-      margin: 20px auto;
-      border: 3px solid #ffd700;
-      border-radius: 15px;
-      overflow: auto;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 0 auto;
-    }
-    td {
-      border: 2px solid #ffd700;
-      padding: 20px;
-      width: 20%; /* 5 columns */
-      height: 80px;
-      cursor: pointer;
-      background-color: rgba(0,0,0,0.5);
-      transition: background-color 0.3s, transform 0.3s;
-      font-weight: bold;
-      font-size: 1.1em;
-      border-radius: 8px;
-      text-align: center;
-      vertical-align: middle;
-    }
-    td:hover:not(.locked) {
-      background-color: rgba(255,215,0,0.3);
-      transform: scale(1.05);
-    }
-    td.selected {
-      background-color: #ffd700;
-      transform: scale(1.1);
-      animation: pulseSelect 0.5s ease-out;
-      color: #000;
-    }
-    @keyframes pulseSelect {
-      0% { transform: scale(1.05); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1.05); }
-    }
-    td.locked {
-      background-color: #32cd32;
-      cursor: default;
-      animation: popLocked 0.6s ease-out;
-      color: #000;
-    }
-    @keyframes popLocked {
-      0% { transform: scale(0.8); opacity: 0.5; }
-      100% { transform: scale(1); opacity: 1; }
-    }
-    /* Surprise Overlay */
+    /* Surprise overlay style */
     #surprise-overlay {
       position: fixed;
       top: 0;
@@ -190,61 +181,122 @@
       border-radius: 5px;
       cursor: pointer;
       color: #fff;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+      box-shadow: 0px 3px 6px rgba(0,0,0,0.3);
       transition: background-color 0.3s, transform 0.3s;
     }
     #surprise-overlay button:hover {
       transform: scale(1.05);
     }
-    /* Responsive Styles */
+    /* Question Scale Styles */
+    #question-scale {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .question-btn {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      margin: 2px;
+      border: 2px solid #ffd700;
+      border-radius: 50%;
+      cursor: pointer;
+      background-color: rgba(0,0,0,0.5);
+      color: #fff;
+      font-weight: bold;
+    }
+    .question-btn.selected {
+      border-color: #4caf50;
+      transform: scale(1.1);
+    }
+    .question-btn.correct {
+      background-color: #32cd32;
+      color: #000;
+    }
+    .question-btn.wrong {
+      background-color: #dc143c;
+      color: #000;
+    }
+    .question-btn.unattempted {
+      background-color: #808080;
+      color: #fff;
+    }
+    #mark-answer {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #mark-answer button {
+      padding: 8px 16px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+    }
+    /* Responsive Styles for Mobile */
     @media (max-width: 600px) {
       body {
-        padding: 10px;
-        background-attachment: scroll;
-      }
-      .container {
         padding: 10px;
       }
       h1 {
         font-size: 2.5em;
       }
       #instruction {
-        font-size: 0.9em;
-        padding: 10px;
+        font-size: 1em;
+        padding: 15px;
       }
       #timer {
-        font-size: 1em;
+        font-size: 1.2em;
       }
       button {
-        padding: 6px 12px;
-        font-size: 0.8em;
+        padding: 8px 16px;
+        font-size: 0.9em;
       }
       td {
-        padding: 8px;
+        width: 80px;
+        height: 60px;
+        padding: 10px;
+        font-size: 0.9em;
+      }
+      .question-btn {
+        width: 25px;
+        height: 25px;
+        line-height: 25px;
         font-size: 0.8em;
-        height: 50px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>SEPM Risk Management Bingo</h1>
-    <div id="instruction">
-      <p>Before you begin, use the "Shuffle Board" button to rearrange the symbols of destiny.<br>
-      When ready, click "Start Game" to begin your 30-second turns. In each turn, select one sacred cell and click "Confirm Answer" to seal its fate.</p>
-    </div>
-    <div id="timer">
-      Time remaining: <span id="time-remaining">30</span> seconds
-    </div>
-    <div id="controls">
-      <button id="start-btn">Start Game</button>
-      <button id="shuffle-btn">Shuffle Board</button>
-      <button id="confirm-btn" disabled>Confirm Answer</button>
-    </div>
-    <div id="bingo-container">
-      <table id="bingo-table"></table>
-    </div>
+  <h1>SEPM Risk Management Bingo</h1>
+  <div id="instruction">
+    <p>
+      Before you begin, use the "Shuffle Board" button to rearrange the symbols of destiny.<br>
+      When ready, click "Start Game" to begin your 30‑second turns. In each turn, select one sacred cell and click "Confirm Answer" to seal its fate.
+    </p>
+  </div>
+  <div id="timer">
+    Time remaining: <span id="time-remaining">30</span> seconds
+  </div>
+  <div id="controls">
+    <button id="start-btn">Start Game</button>
+    <button id="shuffle-btn">Shuffle Board</button>
+    <button id="confirm-btn" disabled>Confirm Answer</button>
+  </div>
+  
+  <div id="bingo-container">
+    <table id="bingo-table"></table>
+  </div>
+  
+  <!-- Question Scale Section -->
+  <div id="question-scale">
+    <h3>Question Scale</h3>
+    <div id="question-buttons"></div>
+  </div>
+  <!-- Mark Answer Buttons -->
+  <div id="mark-answer">
+    <button id="mark-correct" style="background-color: #32cd32; color: #fff;">Mark Correct</button>
+    <button id="mark-wrong" style="background-color: #dc143c; color: #fff;">Mark Wrong</button>
   </div>
 
   <!-- Surprise Ending Overlay -->
@@ -269,6 +321,14 @@
     let selectionLocked = false;
     let selectedWord = null;
     let gameStarted = false;
+    
+    // For question scale functionality:
+    let currentQuestionIndex = 0;
+    let selectedQuestionIndex = null;
+    // Array to hold statuses: "correct", "wrong", "unattempted", or null (not yet marked)
+    let questionStatuses = Array(25).fill(null);
+    // Array to store the confirmed bingo cell element for each question turn
+    let confirmedCells = Array(25).fill(null);
 
     const timeRemainingEl = document.getElementById('time-remaining');
     const timerEl = document.getElementById('timer');
@@ -277,17 +337,6 @@
     const confirmBtn = document.getElementById('confirm-btn');
     const table = document.getElementById('bingo-table');
     const overlay = document.getElementById('surprise-overlay');
-
-    // Fisher-Yates shuffle.
-    function shuffle(array) {
-      let currentIndex = array.length, randomIndex;
-      while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-      }
-      return array;
-    }
 
     // Build the bingo board.
     function buildBingoBoard() {
@@ -301,9 +350,10 @@
           cell.innerText = word;
           cell.dataset.row = i;
           cell.dataset.col = j;
-          cell.classList.remove('selected', 'locked');
+          cell.classList.remove('selected', 'locked', 'correct', 'wrong');
           cell.addEventListener('click', () => {
-            if (gameStarted && !selectionLocked && !cell.classList.contains('locked')) {
+            if (gameStarted && !selectionLocked && !cell.classList.contains('locked') && !cell.classList.contains('correct') && !cell.classList.contains('wrong')) {
+              // Deselect any previously selected cell.
               document.querySelectorAll('#bingo-table td').forEach(c => c.classList.remove('selected'));
               cell.classList.add('selected');
               selectedWord = cell.innerText;
@@ -314,14 +364,80 @@
       }
     }
 
+    // Fisher-Yates shuffle.
+    function shuffle(array) {
+      let currentIndex = array.length, randomIndex;
+      while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+      }
+      return array;
+    }
+
+    // Build the question scale.
+    function buildQuestionScale() {
+      const qsDiv = document.getElementById('question-buttons');
+      qsDiv.innerHTML = "";
+      for (let i = 0; i < 25; i++) {
+        let btn = document.createElement('div');
+        btn.classList.add('question-btn');
+        btn.innerText = i + 1;
+        btn.dataset.index = i;
+        btn.addEventListener('click', function(){
+          // Deselect others.
+          document.querySelectorAll('.question-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedQuestionIndex = i;
+        });
+        qsDiv.appendChild(btn);
+      }
+    }
+
+    // Mark a question with a given status and update its appearance.
+    // Also update the corresponding bingo cell (if it exists) with the same status.
+    function markQuestion(index, status) {
+      questionStatuses[index] = status;
+      const btn = document.querySelector(`.question-btn[data-index="${index}"]`);
+      if (btn) {
+        btn.classList.remove('correct', 'wrong', 'unattempted');
+        if (status === "correct") {
+          btn.classList.add('correct');
+        } else if (status === "wrong") {
+          btn.classList.add('wrong');
+        } else if (status === "unattempted") {
+          btn.classList.add('unattempted');
+        }
+      }
+      // Update the corresponding bingo cell.
+      if (confirmedCells[index]) {
+        confirmedCells[index].classList.remove('locked', 'correct', 'wrong');
+        if (status === "correct") {
+          confirmedCells[index].classList.add('correct');
+        } else if (status === "wrong") {
+          confirmedCells[index].classList.add('wrong');
+        }
+      }
+    }
+
     // Start a new turn: reset timer and clear current selection.
     function startTurn() {
       clearInterval(timerInterval);
+      // If there are still questions left, highlight the current question on the scale.
+      if (currentQuestionIndex < 25) {
+        document.querySelectorAll('.question-btn').forEach(btn => btn.classList.remove('selected'));
+        const currentBtn = document.querySelector(`.question-btn[data-index="${currentQuestionIndex}"]`);
+        if (currentBtn) {
+          currentBtn.classList.add('selected');
+          selectedQuestionIndex = currentQuestionIndex;
+        }
+      }
       timeRemaining = 30;
       timeRemainingEl.innerText = timeRemaining;
       selectedWord = null;
       confirmBtn.disabled = true;
       selectionLocked = false;
+      // Remove any selected state on bingo board cells.
       document.querySelectorAll('#bingo-table td').forEach(cell => cell.classList.remove('selected'));
       timerInterval = setInterval(() => {
         timeRemaining--;
@@ -330,33 +446,44 @@
           clearInterval(timerInterval);
           selectionLocked = true;
           confirmBtn.disabled = true;
+          // Mark the current question as unattempted if not already marked.
+          markQuestion(currentQuestionIndex, "unattempted");
           alert("Time's up! The fates have spoken. Starting a new turn.");
-          startTurn();
+          currentQuestionIndex++;
+          if (currentQuestionIndex < 25) startTurn();
         }
       }, 1000);
     }
 
-    // Confirm button event: lock the selected cell.
+    // Confirm button event: lock the selected cell, store it for later marking,
+    // and then move to the next question.
     confirmBtn.addEventListener('click', function () {
       if (selectedWord) {
         selectionLocked = true;
         clearInterval(timerInterval);
-        document.querySelectorAll('#bingo-table td').forEach(cell => {
-          if (cell.innerText === selectedWord && cell.classList.contains('selected')) {
-            cell.classList.add('locked');
-            cell.classList.remove('selected');
-          }
-        });
-        confirmBtn.disabled = true;
-        if (checkBingo()) {
-          showSurprise();
-        } else {
-          setTimeout(startTurn, 500);
+        // Find the cell that is currently selected.
+        const cell = document.querySelector('#bingo-table td.selected');
+        if (cell) {
+          // Mark the cell as "locked" temporarily.
+          cell.classList.remove('selected');
+          cell.classList.add('locked');
+          // Store this cell for the current question.
+          confirmedCells[currentQuestionIndex] = cell;
         }
+        confirmBtn.disabled = true;
+        // After confirming, move to the next question.
+        currentQuestionIndex++;
+        setTimeout(() => {
+          if (currentQuestionIndex < 25) startTurn();
+          // After each confirmation, check for bingo.
+          if (checkBingo()) {
+            showSurprise();
+          }
+        }, 500);
       }
     });
 
-    // Check for bingo (complete row, column, or diagonal).
+    // Check for bingo (complete row, column, or diagonal) using only cells marked as correct.
     function checkBingo() {
       const cells = table.getElementsByTagName('td');
       let grid = [];
@@ -369,8 +496,10 @@
       for (let cell of cells) {
         let r = parseInt(cell.dataset.row);
         let c = parseInt(cell.dataset.col);
-        grid[r][c] = cell.classList.contains('locked');
+        // Only count cells that have been marked correct.
+        grid[r][c] = cell.classList.contains('correct');
       }
+      // Check rows and columns.
       for (let i = 0; i < 5; i++) {
         if (grid[i].every(val => val)) return true;
         let colComplete = true;
@@ -382,6 +511,7 @@
         }
         if (colComplete) return true;
       }
+      // Check diagonals.
       let diag1 = true, diag2 = true;
       for (let i = 0; i < 5; i++) {
         if (!grid[i][i]) diag1 = false;
@@ -390,30 +520,58 @@
       return diag1 || diag2;
     }
 
-    // Show the surprise overlay.
+    // Show the surprise ending overlay.
     function showSurprise() {
       overlay.style.display = 'flex';
     }
 
-    // Reset the game.
+    // Reset game: rebuild the board, question scale, and restart the turn.
     function resetGame() {
       overlay.style.display = 'none';
       gameStarted = false;
+      // Enable shuffle and start buttons.
       shuffleBtn.disabled = false;
       startBtn.disabled = false;
+      currentQuestionIndex = 0;
+      questionStatuses = Array(25).fill(null);
+      confirmedCells = Array(25).fill(null);
       buildBingoBoard();
+      buildQuestionScale();
       timerEl.style.display = "none";
     }
 
+    // Start game button event.
     startBtn.addEventListener('click', function () {
       gameStarted = true;
+      // Once game starts, disable the start and shuffle buttons.
       startBtn.disabled = true;
       shuffleBtn.disabled = true;
       timerEl.style.display = "block";
       startTurn();
     });
+
+    // Shuffle button event (active only before the game starts).
     shuffleBtn.addEventListener('click', buildBingoBoard);
+
+    // Mark Answer Buttons event listeners.
+    document.getElementById('mark-correct').addEventListener('click', function(){
+      if (selectedQuestionIndex !== null && selectedQuestionIndex < 25) {
+        markQuestion(selectedQuestionIndex, "correct");
+        // After marking, check if we now have bingo.
+        if (checkBingo()) {
+          showSurprise();
+        }
+      }
+    });
+    document.getElementById('mark-wrong').addEventListener('click', function(){
+      if (selectedQuestionIndex !== null && selectedQuestionIndex < 25) {
+        markQuestion(selectedQuestionIndex, "wrong");
+      }
+    });
+
+    // Initialize board and question scale.
     buildBingoBoard();
+    buildQuestionScale();
   </script>
 </body>
 </html>
