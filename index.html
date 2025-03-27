@@ -37,18 +37,36 @@
       box-shadow: 0px 4px 15px rgba(0,0,0,0.4);
       backdrop-filter: blur(4px);
     }
-    /* Timer */
+    /* Timer Section with Graphic Timer */
     #timer {
       font-size: 1.4em;
       margin: 10px 0;
-      display: none;
-      animation: pulse 1.5s infinite;
       color: #ffd700;
     }
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
+    /* Flip animation for numeric timer */
+    #time-remaining {
+      display: inline-block;
+      animation: flipClock 1s linear;
+    }
+    @keyframes flipClock {
+      0% { transform: rotateX(0deg); }
+      100% { transform: rotateX(360deg); }
+    }
+    /* Graphic Timer (progress bar) with lighter container */
+    #graphic-timer {
+      width: 100%;
+      height: 10px;
+      border: 1px solid #ffd700;
+      border-radius: 5px;
+      background: #eee;
+      margin-top: 5px;
+    }
+    #timer-progress {
+      height: 100%;
+      background-color: #666;
+      width: 100%;
+      transition: width 1s linear;
+      border-radius: 5px;
     }
     /* Bingo Container */
     #bingo-container {
@@ -69,7 +87,7 @@
       width: 120px;
       height: 80px;
       cursor: pointer;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0,0,0,0.5);
       transition: background-color 0.3s, transform 0.3s;
       font-weight: bold;
       font-size: 1.1em;
@@ -78,7 +96,7 @@
       overflow: hidden;
     }
     td:hover:not(.locked):not(.correct):not(.wrong) {
-      background-color: rgba(255, 215, 0, 0.3);
+      background-color: rgba(255,215,0,0.3);
       transform: scale(1.05);
     }
     td.selected {
@@ -92,7 +110,6 @@
       50% { transform: scale(1.1); }
       100% { transform: scale(1.05); }
     }
-    /* Default locked state (before answer marking) */
     td.locked {
       background-color: #444;
       cursor: default;
@@ -103,17 +120,19 @@
       0% { transform: scale(0.8); opacity: 0.5; }
       100% { transform: scale(1); opacity: 1; }
     }
-    /* When a cell is marked correct (green) */
     td.correct {
       background-color: #32cd32;
       color: #000;
       cursor: default;
     }
-    /* When a cell is marked wrong (red) */
     td.wrong {
       background-color: #dc143c;
       color: #000;
       cursor: default;
+    }
+    /* Rapid Fire cells get a dashed outline */
+    td.rapid-fire {
+      outline: 2px dashed #ffd700;
     }
     /* Controls */
     #controls {
@@ -148,7 +167,13 @@
       background-color: #9e9e9e;
       cursor: not-allowed;
     }
-    /* Fancy Decision Overlay */
+    /* New Time Out button for Rapid Fire */
+    #timeout-btn {
+      background-color: #808080;
+      color: #fff;
+      display: none;
+    }
+    /* Decision Overlay */
     #decision-overlay {
       position: fixed;
       top: 0;
@@ -192,7 +217,7 @@
     .decision-wrong {
       background-color: rgba(220,20,60,0.8);
     }
-    /* Timeout overlay (single option) */
+    /* Timeout Overlay */
     #timeout-overlay {
       position: fixed;
       top: 0;
@@ -223,7 +248,49 @@
     #timeout-overlay button:hover {
       background-color: #696969;
     }
-    /* Surprise overlay style */
+    /* Rapid Fire Start Overlay */
+    #rapidfire-start-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      color: #ffd700;
+      display: none;
+      z-index: 1200;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      animation: rapidFireFadeIn 1s ease-out;
+    }
+    @keyframes rapidFireFadeIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    #rapidfire-start-overlay h2 {
+      font-size: 3em;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+    }
+    #rapidfire-start-overlay p {
+      font-size: 1.5em;
+      margin-bottom: 30px;
+    }
+    #rapidfire-start-overlay button {
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #dc143c;
+      color: #ffd700;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.3s;
+    }
+    #rapidfire-start-overlay button:hover {
+      transform: scale(1.05);
+    }
+    /* Surprise Overlay */
     #surprise-overlay {
       position: fixed;
       top: 0;
@@ -296,12 +363,6 @@
       background-color: #808080;
       color: #fff;
     }
-    /* Mark Answer Buttons (hidden now in favor of overlay) */
-    #mark-answer {
-      margin-top: 10px;
-      text-align: center;
-      display: none;
-    }
     /* Responsive Styles for Mobile */
     @media (max-width: 600px) {
       body { padding: 10px; }
@@ -314,6 +375,8 @@
       #decision-container { flex-direction: column; }
       .decision-option { width: 100%; border-right: none; border-bottom: 2px solid #ffd700; }
       .decision-wrong { border-bottom: none; }
+      #rapidfire-start-overlay h2 { font-size: 2.5em; }
+      #rapidfire-start-overlay p { font-size: 1.2em; }
     }
   </style>
 </head>
@@ -325,13 +388,19 @@
       When ready, click "Start Game" to begin your 30‑second turns. In each turn, select one sacred cell and click "Confirm Answer" to seal its fate.
     </p>
   </div>
+  
   <div id="timer">
     Time remaining: <span id="time-remaining">30</span> seconds
+    <div id="graphic-timer">
+      <div id="timer-progress"></div>
+    </div>
   </div>
+  
   <div id="controls">
     <button id="start-btn">Start Game</button>
     <button id="shuffle-btn">Shuffle Board</button>
     <button id="confirm-btn" disabled>Confirm Answer</button>
+    <button id="timeout-btn" style="display:none;">Time Out</button>
   </div>
   
   <div id="bingo-container">
@@ -344,15 +413,11 @@
     <div id="question-buttons"></div>
   </div>
   
-  <!-- Decision Overlay (for confirmed answers) -->
+  <!-- Decision Overlay (for marking answers) -->
   <div id="decision-overlay">
     <div id="decision-container">
-      <div class="decision-option decision-correct" id="decide-correct">
-        ✓
-      </div>
-      <div class="decision-option decision-wrong" id="decide-wrong">
-        ✕
-      </div>
+      <div class="decision-option decision-correct" id="decide-correct">✓</div>
+      <div class="decision-option decision-wrong" id="decide-wrong">✕</div>
     </div>
   </div>
   
@@ -362,13 +427,20 @@
     <button id="timeout-continue">Continue</button>
   </div>
   
-  <!-- Surprise Ending Overlay -->
+  <!-- Rapid Fire Start Overlay -->
+  <div id="rapidfire-start-overlay">
+    <h2>Rapid Fire Round</h2>
+    <p>Reattempt all wrong/unanswered questions now!</p>
+    <button id="rapidfire-continue">Continue</button>
+  </div>
+  
+  <!-- Surprise Overlay -->
   <div id="surprise-overlay">
     <h2>Bingo! Fortune Favors You!</h2>
     <p>You have unlocked the ancient fortune of Risk Management!</p>
     <button onclick="resetGame()">Play Again</button>
   </div>
-
+  
   <script>
     // List of risk words for the bingo board.
     const riskWords = [
@@ -378,36 +450,45 @@
       "Cultural", "Safety", "Personnel", "Supply", "Customer",
       "Infrastructure", "Strategic", "Data", "Innovation", "Ethics"
     ];
-
+    
     let timerInterval;
     let timeRemaining = 30;
     let selectionLocked = false;
     let selectedWord = null;
     let gameStarted = false;
     
-    // For question scale functionality:
+    // Initial round tracking (25 questions).
     let currentQuestionIndex = 0;
     let selectedQuestionIndex = null;
-    // Array to hold statuses: "correct", "wrong", "unattempted", or null (not yet marked)
+    // Stores statuses: "correct", "wrong", "unattempted"
     let questionStatuses = Array(25).fill(null);
-    // Array to store the confirmed bingo cell element for each question turn
+    // Stores the bingo cell for each question.
     let confirmedCells = Array(25).fill(null);
-
+    
+    // Rapid Fire mode flag.
+    let isRapidFire = false;
+    // In Rapid Fire mode, currentRapidQuestion holds the question index for reattempt.
+    let currentRapidQuestion = null;
+    
     const timeRemainingEl = document.getElementById('time-remaining');
+    const timerProgressEl = document.getElementById('timer-progress');
     const timerEl = document.getElementById('timer');
     const startBtn = document.getElementById('start-btn');
     const shuffleBtn = document.getElementById('shuffle-btn');
     const confirmBtn = document.getElementById('confirm-btn');
+    const timeoutBtn = document.getElementById('timeout-btn');
     const table = document.getElementById('bingo-table');
     const overlaySurprise = document.getElementById('surprise-overlay');
-
-    // Decision and Timeout overlays
+    
+    // Overlays for decision, timeout, and rapid fire start.
     const decisionOverlay = document.getElementById('decision-overlay');
     const decideCorrectBtn = document.getElementById('decide-correct');
     const decideWrongBtn = document.getElementById('decide-wrong');
     const timeoutOverlay = document.getElementById('timeout-overlay');
     const timeoutContinueBtn = document.getElementById('timeout-continue');
-
+    const rapidfireStartOverlay = document.getElementById('rapidfire-start-overlay');
+    const rapidfireContinueBtn = document.getElementById('rapidfire-continue');
+    
     // Build the bingo board.
     function buildBingoBoard() {
       table.innerHTML = "";
@@ -420,9 +501,11 @@
           cell.innerText = word;
           cell.dataset.row = i;
           cell.dataset.col = j;
-          cell.classList.remove('selected', 'locked', 'correct', 'wrong');
+          cell.classList.remove('selected', 'locked', 'correct', 'wrong', 'rapid-fire');
+          // In initial round, only allow selection if not in rapid fire.
           cell.addEventListener('click', () => {
-            if (gameStarted && !selectionLocked && !cell.classList.contains('locked') && !cell.classList.contains('correct') && !cell.classList.contains('wrong')) {
+            if (gameStarted && !selectionLocked && !cell.classList.contains('locked') &&
+                !cell.classList.contains('correct') && !cell.classList.contains('wrong') && !isRapidFire) {
               document.querySelectorAll('#bingo-table td').forEach(c => c.classList.remove('selected'));
               cell.classList.add('selected');
               selectedWord = cell.innerText;
@@ -432,7 +515,7 @@
         }
       }
     }
-
+    
     // Fisher-Yates shuffle.
     function shuffle(array) {
       let currentIndex = array.length, randomIndex;
@@ -443,7 +526,7 @@
       }
       return array;
     }
-
+    
     // Build the question scale.
     function buildQuestionScale() {
       const qsDiv = document.getElementById('question-buttons');
@@ -461,45 +544,41 @@
         qsDiv.appendChild(btn);
       }
     }
-
-    // Mark a question with a given status and update its appearance.
-    // Also update the corresponding bingo cell with the same status.
+    
+    // Mark a question with a given status and update appearance.
     function markQuestion(index, status) {
       questionStatuses[index] = status;
       const btn = document.querySelector(`.question-btn[data-index="${index}"]`);
       if (btn) {
         btn.classList.remove('correct', 'wrong', 'unattempted');
-        if (status === "correct") {
-          btn.classList.add('correct');
-        } else if (status === "wrong") {
-          btn.classList.add('wrong');
-        } else if (status === "unattempted") {
-          btn.classList.add('unattempted');
-        }
+        if (status === "correct") btn.classList.add('correct');
+        else if (status === "wrong") btn.classList.add('wrong');
+        else if (status === "unattempted") btn.classList.add('unattempted');
       }
       if (confirmedCells[index]) {
-        confirmedCells[index].classList.remove('locked', 'correct', 'wrong');
-        if (status === "correct") {
-          confirmedCells[index].classList.add('correct');
-        } else if (status === "wrong") {
-          confirmedCells[index].classList.add('wrong');
-        }
+        confirmedCells[index].classList.remove('locked', 'correct', 'wrong', 'rapid-fire');
+        if (status === "correct") confirmedCells[index].classList.add('correct');
+        else if (status === "wrong") confirmedCells[index].classList.add('wrong');
       }
     }
-
-    // Start a new turn: reset timer, clear current selection, and start the countdown.
+    
+    // Start a new turn (initial round).
     function startTurn() {
       clearInterval(timerInterval);
-      if (currentQuestionIndex < 25) {
-        document.querySelectorAll('.question-btn').forEach(btn => btn.classList.remove('selected'));
-        const currentBtn = document.querySelector(`.question-btn[data-index="${currentQuestionIndex}"]`);
-        if (currentBtn) {
-          currentBtn.classList.add('selected');
-          selectedQuestionIndex = currentQuestionIndex;
+      if (!isRapidFire) {
+        if (currentQuestionIndex < 25) {
+          document.querySelectorAll('.question-btn').forEach(btn => btn.classList.remove('selected'));
+          const currentBtn = document.querySelector(`.question-btn[data-index="${currentQuestionIndex}"]`);
+          if (currentBtn) {
+            currentBtn.classList.add('selected');
+            selectedQuestionIndex = currentQuestionIndex;
+          }
         }
+        timeoutBtn.style.display = "none";
       }
       timeRemaining = 30;
       timeRemainingEl.innerText = timeRemaining;
+      timerProgressEl.style.width = "100%";
       selectedWord = null;
       confirmBtn.disabled = true;
       selectionLocked = false;
@@ -507,91 +586,151 @@
       timerInterval = setInterval(() => {
         timeRemaining--;
         timeRemainingEl.innerText = timeRemaining;
+        timerProgressEl.style.width = (timeRemaining / 30 * 100) + "%";
         if (timeRemaining <= 0) {
           clearInterval(timerInterval);
           selectionLocked = true;
           confirmBtn.disabled = true;
-          // Show timeout overlay if time runs out.
           showTimeoutOverlay();
         }
       }, 1000);
+      
+      // In rapid fire mode, show the extra "Time Out" button.
+      if (isRapidFire) {
+        timeoutBtn.style.display = "inline-block";
+      } else {
+        timeoutBtn.style.display = "none";
+      }
     }
-
-    // When Confirm Answer is clicked, stop the timer and show the decision overlay.
+    
+    // Confirm Answer: stop timer, store cell, and show decision overlay.
     confirmBtn.addEventListener('click', function () {
       if (selectedWord) {
         clearInterval(timerInterval);
         selectionLocked = true;
-        // Store the selected cell.
+        let qIndex = !isRapidFire ? currentQuestionIndex : currentRapidQuestion;
         const cell = document.querySelector('#bingo-table td.selected');
         if (cell) {
           cell.classList.remove('selected');
           cell.classList.add('locked');
-          confirmedCells[currentQuestionIndex] = cell;
+          cell.dataset.qindex = qIndex;
+          confirmedCells[qIndex] = cell;
         }
-        // Show the decision overlay for user to choose correct or wrong.
         showDecisionOverlay();
       }
     });
-
-    // Show decision overlay for confirmed answers.
+    
+    // "Time Out" button event for Rapid Fire mode.
+    timeoutBtn.addEventListener('click', function() {
+      rapidFireTimeout();
+    });
+    
+    // Show decision overlay.
     function showDecisionOverlay() {
       decisionOverlay.style.display = 'flex';
     }
-
-    // Hide decision overlay and continue to next question.
+    
+    // Hide decision overlay and move on.
     function hideDecisionOverlay() {
       decisionOverlay.style.display = 'none';
-      currentQuestionIndex++;
-      if (currentQuestionIndex < 25) {
-        startTurn();
+      if (!isRapidFire) {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < 25) startTurn();
+        else if (!checkBingo()) {
+          showRapidFireStartOverlay();
+        }
+      } else {
+        let qIndex = currentRapidQuestion;
+        if (confirmedCells[qIndex]) {
+          confirmedCells[qIndex].classList.remove('rapid-fire');
+          confirmedCells[qIndex].removeEventListener('click', rapidFireCellClick);
+        }
+        let pending = false;
+        for (let i = 0; i < 25; i++) {
+          if (questionStatuses[i] !== "correct" && confirmedCells[i] && confirmedCells[i].classList.contains('rapid-fire')) {
+            pending = true;
+            break;
+          }
+        }
+        if (!pending) {
+          isRapidFire = false;
+          if (!checkBingo()) alert("Rapid Fire Round ended. Bingo not achieved.");
+        }
       }
     }
-
+    
     // Show timeout overlay.
     function showTimeoutOverlay() {
       timeoutOverlay.style.display = 'flex';
     }
-
-    // Hide timeout overlay and move to next question.
+    
+    // Hide timeout overlay and mark question as unattempted.
     function hideTimeoutOverlay() {
       timeoutOverlay.style.display = 'none';
-      // Mark current question as unattempted.
-      markQuestion(currentQuestionIndex, "unattempted");
-      currentQuestionIndex++;
-      if (currentQuestionIndex < 25) {
-        startTurn();
+      let qIndex = !isRapidFire ? currentQuestionIndex : currentRapidQuestion;
+      markQuestion(qIndex, "unattempted");
+      if (!isRapidFire) {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < 25) startTurn();
+        else if (!checkBingo()) showRapidFireStartOverlay();
+      } else {
+        if (confirmedCells[qIndex]) {
+          confirmedCells[qIndex].classList.remove('rapid-fire');
+          confirmedCells[qIndex].removeEventListener('click', rapidFireCellClick);
+        }
       }
     }
-
+    
+    // "Time Out" function for rapid fire button.
+    function rapidFireTimeout() {
+      clearInterval(timerInterval);
+      let qIndex = currentRapidQuestion;
+      markQuestion(qIndex, "unattempted");
+      if (confirmedCells[qIndex]) {
+        confirmedCells[qIndex].classList.remove('rapid-fire');
+        confirmedCells[qIndex].removeEventListener('click', rapidFireCellClick);
+      }
+      // Hide the "Time Out" button
+      timeoutBtn.style.display = "none";
+      // Check if any rapid-fire cells remain.
+      let pending = false;
+      for (let i = 0; i < 25; i++) {
+        if (questionStatuses[i] !== "correct" && confirmedCells[i] && confirmedCells[i].classList.contains('rapid-fire')) {
+          pending = true;
+          break;
+        }
+      }
+      if (!pending) {
+        isRapidFire = false;
+        if (!checkBingo()) alert("Rapid Fire Round ended. Bingo not achieved.");
+      }
+    }
+    
     // Decision overlay event listeners.
     decideCorrectBtn.addEventListener('click', function() {
-      markQuestion(currentQuestionIndex, "correct");
-      // Also update the confirmed cell style.
+      let qIndex = !isRapidFire ? currentQuestionIndex : currentRapidQuestion;
+      markQuestion(qIndex, "correct");
       hideDecisionOverlay();
-      if (checkBingo()) {
-        showSurprise();
-      }
+      if (checkBingo()) showSurprise();
     });
     decideWrongBtn.addEventListener('click', function() {
-      markQuestion(currentQuestionIndex, "wrong");
+      let qIndex = !isRapidFire ? currentQuestionIndex : currentRapidQuestion;
+      markQuestion(qIndex, "wrong");
       hideDecisionOverlay();
     });
-
+    
     // Timeout overlay continue button.
     timeoutContinueBtn.addEventListener('click', function() {
       hideTimeoutOverlay();
     });
-
-    // Check for bingo (only counting cells marked as correct).
+    
+    // Check for bingo (only cells marked as correct count).
     function checkBingo() {
       const cells = table.getElementsByTagName('td');
       let grid = [];
       for (let i = 0; i < 5; i++) {
         grid[i] = [];
-        for (let j = 0; j < 5; j++) {
-          grid[i][j] = false;
-        }
+        for (let j = 0; j < 5; j++) grid[i][j] = false;
       }
       for (let cell of cells) {
         let r = parseInt(cell.dataset.row);
@@ -602,10 +741,7 @@
         if (grid[i].every(val => val)) return true;
         let colComplete = true;
         for (let j = 0; j < 5; j++) {
-          if (!grid[j][i]) {
-            colComplete = false;
-            break;
-          }
+          if (!grid[j][i]) { colComplete = false; break; }
         }
         if (colComplete) return true;
       }
@@ -616,13 +752,65 @@
       }
       return diag1 || diag2;
     }
-
-    // Show the surprise ending overlay.
+    
+    // Show surprise overlay when bingo is reached.
     function showSurprise() {
       overlaySurprise.style.display = 'flex';
     }
-
-    // Reset game: rebuild board, question scale, and restart.
+    
+    // Show Rapid Fire Start Overlay with "Continue" button.
+    function showRapidFireStartOverlay() {
+      rapidfireStartOverlay.style.display = 'flex';
+    }
+    
+    // When "Continue" is clicked in Rapid Fire Start, hide overlay and release rapid fire.
+    rapidfireContinueBtn.addEventListener('click', function() {
+      rapidfireStartOverlay.style.display = 'none';
+      releaseRapidFire();
+    });
+    
+    // Release Rapid Fire mode: unlock all wrong/unanswered cells.
+    function releaseRapidFire() {
+      isRapidFire = true;
+      for (let i = 0; i < 25; i++) {
+        if (questionStatuses[i] !== "correct" && confirmedCells[i]) {
+          confirmedCells[i].classList.remove('locked', 'wrong', 'unattempted');
+          confirmedCells[i].classList.add('rapid-fire');
+          confirmedCells[i].dataset.qindex = i;
+          confirmedCells[i].addEventListener('click', rapidFireCellClick);
+        }
+      }
+      alert("Rapid Fire Mode: All wrong/unanswered questions are now unlocked for reattempt.");
+      // Show the "Time Out" button in rapid fire mode.
+      timeoutBtn.style.display = "inline-block";
+    }
+    
+    // Rapid Fire cell click handler.
+    function rapidFireCellClick(event) {
+      clearInterval(timerInterval);
+      document.querySelectorAll('#bingo-table td.rapid-fire').forEach(cell => cell.classList.remove('selected'));
+      let cell = event.currentTarget;
+      cell.classList.add('selected');
+      selectedWord = cell.innerText;
+      confirmBtn.disabled = false;
+      currentRapidQuestion = cell.dataset.qindex;
+      timeRemaining = 30;
+      timeRemainingEl.innerText = timeRemaining;
+      timerProgressEl.style.width = "100%";
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        timeRemainingEl.innerText = timeRemaining;
+        timerProgressEl.style.width = (timeRemaining / 30 * 100) + "%";
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          selectionLocked = true;
+          confirmBtn.disabled = true;
+          showTimeoutOverlay();
+        }
+      }, 1000);
+    }
+    
+    // Reset game.
     function resetGame() {
       overlaySurprise.style.display = 'none';
       gameStarted = false;
@@ -631,11 +819,13 @@
       currentQuestionIndex = 0;
       questionStatuses = Array(25).fill(null);
       confirmedCells = Array(25).fill(null);
+      isRapidFire = false;
+      currentRapidQuestion = null;
       buildBingoBoard();
       buildQuestionScale();
       timerEl.style.display = "none";
     }
-
+    
     // Start game button event.
     startBtn.addEventListener('click', function () {
       gameStarted = true;
@@ -644,10 +834,10 @@
       timerEl.style.display = "block";
       startTurn();
     });
-
-    // Shuffle button event (active only before the game starts).
+    
+    // Shuffle button event.
     shuffleBtn.addEventListener('click', buildBingoBoard);
-
+    
     // Initialize board and question scale.
     buildBingoBoard();
     buildQuestionScale();
