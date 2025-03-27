@@ -148,6 +148,81 @@
       background-color: #9e9e9e;
       cursor: not-allowed;
     }
+    /* Fancy Decision Overlay */
+    #decision-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      z-index: 1100;
+      align-items: center;
+      justify-content: center;
+    }
+    #decision-container {
+      background: rgba(255,255,255,0.1);
+      border: 2px solid #ffd700;
+      border-radius: 15px;
+      width: 80%;
+      max-width: 600px;
+      display: flex;
+      overflow: hidden;
+    }
+    .decision-option {
+      flex: 1;
+      padding: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      font-weight: bold;
+      color: #fff;
+      transition: background-color 0.3s;
+    }
+    .decision-option:hover {
+      opacity: 0.9;
+    }
+    .decision-correct {
+      background-color: rgba(50,205,50,0.8);
+      border-right: 2px solid #ffd700;
+    }
+    .decision-wrong {
+      background-color: rgba(220,20,60,0.8);
+    }
+    /* Timeout overlay (single option) */
+    #timeout-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      z-index: 1100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    #timeout-overlay p {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+    #timeout-overlay button {
+      padding: 15px 30px;
+      font-size: 1.5em;
+      background-color: #808080;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #timeout-overlay button:hover {
+      background-color: #696969;
+    }
     /* Surprise overlay style */
     #surprise-overlay {
       position: fixed;
@@ -221,49 +296,24 @@
       background-color: #808080;
       color: #fff;
     }
+    /* Mark Answer Buttons (hidden now in favor of overlay) */
     #mark-answer {
       margin-top: 10px;
       text-align: center;
-    }
-    #mark-answer button {
-      padding: 8px 16px;
-      margin: 5px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 1em;
+      display: none;
     }
     /* Responsive Styles for Mobile */
     @media (max-width: 600px) {
-      body {
-        padding: 10px;
-      }
-      h1 {
-        font-size: 2.5em;
-      }
-      #instruction {
-        font-size: 1em;
-        padding: 15px;
-      }
-      #timer {
-        font-size: 1.2em;
-      }
-      button {
-        padding: 8px 16px;
-        font-size: 0.9em;
-      }
-      td {
-        width: 80px;
-        height: 60px;
-        padding: 10px;
-        font-size: 0.9em;
-      }
-      .question-btn {
-        width: 25px;
-        height: 25px;
-        line-height: 25px;
-        font-size: 0.8em;
-      }
+      body { padding: 10px; }
+      h1 { font-size: 2.5em; }
+      #instruction { font-size: 1em; padding: 15px; }
+      #timer { font-size: 1.2em; }
+      button { padding: 8px 16px; font-size: 0.9em; }
+      td { width: 80px; height: 60px; padding: 10px; font-size: 0.9em; }
+      .question-btn { width: 25px; height: 25px; line-height: 25px; font-size: 0.8em; }
+      #decision-container { flex-direction: column; }
+      .decision-option { width: 100%; border-right: none; border-bottom: 2px solid #ffd700; }
+      .decision-wrong { border-bottom: none; }
     }
   </style>
 </head>
@@ -293,12 +343,25 @@
     <h3>Question Scale</h3>
     <div id="question-buttons"></div>
   </div>
-  <!-- Mark Answer Buttons -->
-  <div id="mark-answer">
-    <button id="mark-correct" style="background-color: #32cd32; color: #fff;">Mark Correct</button>
-    <button id="mark-wrong" style="background-color: #dc143c; color: #fff;">Mark Wrong</button>
+  
+  <!-- Decision Overlay (for confirmed answers) -->
+  <div id="decision-overlay">
+    <div id="decision-container">
+      <div class="decision-option decision-correct" id="decide-correct">
+        ✓
+      </div>
+      <div class="decision-option decision-wrong" id="decide-wrong">
+        ✕
+      </div>
+    </div>
   </div>
-
+  
+  <!-- Timeout Overlay -->
+  <div id="timeout-overlay">
+    <p>Time Out!</p>
+    <button id="timeout-continue">Continue</button>
+  </div>
+  
   <!-- Surprise Ending Overlay -->
   <div id="surprise-overlay">
     <h2>Bingo! Fortune Favors You!</h2>
@@ -336,7 +399,14 @@
     const shuffleBtn = document.getElementById('shuffle-btn');
     const confirmBtn = document.getElementById('confirm-btn');
     const table = document.getElementById('bingo-table');
-    const overlay = document.getElementById('surprise-overlay');
+    const overlaySurprise = document.getElementById('surprise-overlay');
+
+    // Decision and Timeout overlays
+    const decisionOverlay = document.getElementById('decision-overlay');
+    const decideCorrectBtn = document.getElementById('decide-correct');
+    const decideWrongBtn = document.getElementById('decide-wrong');
+    const timeoutOverlay = document.getElementById('timeout-overlay');
+    const timeoutContinueBtn = document.getElementById('timeout-continue');
 
     // Build the bingo board.
     function buildBingoBoard() {
@@ -353,7 +423,6 @@
           cell.classList.remove('selected', 'locked', 'correct', 'wrong');
           cell.addEventListener('click', () => {
             if (gameStarted && !selectionLocked && !cell.classList.contains('locked') && !cell.classList.contains('correct') && !cell.classList.contains('wrong')) {
-              // Deselect any previously selected cell.
               document.querySelectorAll('#bingo-table td').forEach(c => c.classList.remove('selected'));
               cell.classList.add('selected');
               selectedWord = cell.innerText;
@@ -385,7 +454,6 @@
         btn.innerText = i + 1;
         btn.dataset.index = i;
         btn.addEventListener('click', function(){
-          // Deselect others.
           document.querySelectorAll('.question-btn').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
           selectedQuestionIndex = i;
@@ -395,7 +463,7 @@
     }
 
     // Mark a question with a given status and update its appearance.
-    // Also update the corresponding bingo cell (if it exists) with the same status.
+    // Also update the corresponding bingo cell with the same status.
     function markQuestion(index, status) {
       questionStatuses[index] = status;
       const btn = document.querySelector(`.question-btn[data-index="${index}"]`);
@@ -409,7 +477,6 @@
           btn.classList.add('unattempted');
         }
       }
-      // Update the corresponding bingo cell.
       if (confirmedCells[index]) {
         confirmedCells[index].classList.remove('locked', 'correct', 'wrong');
         if (status === "correct") {
@@ -420,10 +487,9 @@
       }
     }
 
-    // Start a new turn: reset timer and clear current selection.
+    // Start a new turn: reset timer, clear current selection, and start the countdown.
     function startTurn() {
       clearInterval(timerInterval);
-      // If there are still questions left, highlight the current question on the scale.
       if (currentQuestionIndex < 25) {
         document.querySelectorAll('.question-btn').forEach(btn => btn.classList.remove('selected'));
         const currentBtn = document.querySelector(`.question-btn[data-index="${currentQuestionIndex}"]`);
@@ -437,7 +503,6 @@
       selectedWord = null;
       confirmBtn.disabled = true;
       selectionLocked = false;
-      // Remove any selected state on bingo board cells.
       document.querySelectorAll('#bingo-table td').forEach(cell => cell.classList.remove('selected'));
       timerInterval = setInterval(() => {
         timeRemaining--;
@@ -446,44 +511,79 @@
           clearInterval(timerInterval);
           selectionLocked = true;
           confirmBtn.disabled = true;
-          // Mark the current question as unattempted if not already marked.
-          markQuestion(currentQuestionIndex, "unattempted");
-          alert("Time's up! The fates have spoken. Starting a new turn.");
-          currentQuestionIndex++;
-          if (currentQuestionIndex < 25) startTurn();
+          // Show timeout overlay if time runs out.
+          showTimeoutOverlay();
         }
       }, 1000);
     }
 
-    // Confirm button event: lock the selected cell, store it for later marking,
-    // and then move to the next question.
+    // When Confirm Answer is clicked, stop the timer and show the decision overlay.
     confirmBtn.addEventListener('click', function () {
       if (selectedWord) {
-        selectionLocked = true;
         clearInterval(timerInterval);
-        // Find the cell that is currently selected.
+        selectionLocked = true;
+        // Store the selected cell.
         const cell = document.querySelector('#bingo-table td.selected');
         if (cell) {
-          // Mark the cell as "locked" temporarily.
           cell.classList.remove('selected');
           cell.classList.add('locked');
-          // Store this cell for the current question.
           confirmedCells[currentQuestionIndex] = cell;
         }
-        confirmBtn.disabled = true;
-        // After confirming, move to the next question.
-        currentQuestionIndex++;
-        setTimeout(() => {
-          if (currentQuestionIndex < 25) startTurn();
-          // After each confirmation, check for bingo.
-          if (checkBingo()) {
-            showSurprise();
-          }
-        }, 500);
+        // Show the decision overlay for user to choose correct or wrong.
+        showDecisionOverlay();
       }
     });
 
-    // Check for bingo (complete row, column, or diagonal) using only cells marked as correct.
+    // Show decision overlay for confirmed answers.
+    function showDecisionOverlay() {
+      decisionOverlay.style.display = 'flex';
+    }
+
+    // Hide decision overlay and continue to next question.
+    function hideDecisionOverlay() {
+      decisionOverlay.style.display = 'none';
+      currentQuestionIndex++;
+      if (currentQuestionIndex < 25) {
+        startTurn();
+      }
+    }
+
+    // Show timeout overlay.
+    function showTimeoutOverlay() {
+      timeoutOverlay.style.display = 'flex';
+    }
+
+    // Hide timeout overlay and move to next question.
+    function hideTimeoutOverlay() {
+      timeoutOverlay.style.display = 'none';
+      // Mark current question as unattempted.
+      markQuestion(currentQuestionIndex, "unattempted");
+      currentQuestionIndex++;
+      if (currentQuestionIndex < 25) {
+        startTurn();
+      }
+    }
+
+    // Decision overlay event listeners.
+    decideCorrectBtn.addEventListener('click', function() {
+      markQuestion(currentQuestionIndex, "correct");
+      // Also update the confirmed cell style.
+      hideDecisionOverlay();
+      if (checkBingo()) {
+        showSurprise();
+      }
+    });
+    decideWrongBtn.addEventListener('click', function() {
+      markQuestion(currentQuestionIndex, "wrong");
+      hideDecisionOverlay();
+    });
+
+    // Timeout overlay continue button.
+    timeoutContinueBtn.addEventListener('click', function() {
+      hideTimeoutOverlay();
+    });
+
+    // Check for bingo (only counting cells marked as correct).
     function checkBingo() {
       const cells = table.getElementsByTagName('td');
       let grid = [];
@@ -496,10 +596,8 @@
       for (let cell of cells) {
         let r = parseInt(cell.dataset.row);
         let c = parseInt(cell.dataset.col);
-        // Only count cells that have been marked correct.
         grid[r][c] = cell.classList.contains('correct');
       }
-      // Check rows and columns.
       for (let i = 0; i < 5; i++) {
         if (grid[i].every(val => val)) return true;
         let colComplete = true;
@@ -511,7 +609,6 @@
         }
         if (colComplete) return true;
       }
-      // Check diagonals.
       let diag1 = true, diag2 = true;
       for (let i = 0; i < 5; i++) {
         if (!grid[i][i]) diag1 = false;
@@ -522,14 +619,13 @@
 
     // Show the surprise ending overlay.
     function showSurprise() {
-      overlay.style.display = 'flex';
+      overlaySurprise.style.display = 'flex';
     }
 
-    // Reset game: rebuild the board, question scale, and restart the turn.
+    // Reset game: rebuild board, question scale, and restart.
     function resetGame() {
-      overlay.style.display = 'none';
+      overlaySurprise.style.display = 'none';
       gameStarted = false;
-      // Enable shuffle and start buttons.
       shuffleBtn.disabled = false;
       startBtn.disabled = false;
       currentQuestionIndex = 0;
@@ -543,7 +639,6 @@
     // Start game button event.
     startBtn.addEventListener('click', function () {
       gameStarted = true;
-      // Once game starts, disable the start and shuffle buttons.
       startBtn.disabled = true;
       shuffleBtn.disabled = true;
       timerEl.style.display = "block";
@@ -552,22 +647,6 @@
 
     // Shuffle button event (active only before the game starts).
     shuffleBtn.addEventListener('click', buildBingoBoard);
-
-    // Mark Answer Buttons event listeners.
-    document.getElementById('mark-correct').addEventListener('click', function(){
-      if (selectedQuestionIndex !== null && selectedQuestionIndex < 25) {
-        markQuestion(selectedQuestionIndex, "correct");
-        // After marking, check if we now have bingo.
-        if (checkBingo()) {
-          showSurprise();
-        }
-      }
-    });
-    document.getElementById('mark-wrong').addEventListener('click', function(){
-      if (selectedQuestionIndex !== null && selectedQuestionIndex < 25) {
-        markQuestion(selectedQuestionIndex, "wrong");
-      }
-    });
 
     // Initialize board and question scale.
     buildBingoBoard();
